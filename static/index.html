@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CallSense</title>
+<style>
+:root{--bg:#0d1117;--card:#151b23;--fg:#e6ebf1;--mut:#8b98a7;--bd:#242c37;--acc:#5b8def;
+--low:#2fb36d;--med:#e0a100;--high:#e5484d;--unk:#6b7a8a;
+--ANG:#e5484d;--FEA:#f0883e;--SAD:#5b8def;--NEU:#6b7a8a;--HAP:#2fb36d}
+@media (prefers-color-scheme:light){:root{--bg:#f4f6f9;--card:#fff;--fg:#13181f;--mut:#566271;--bd:#dde2e8}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--bd)}
+.logo{font-weight:700;font-size:18px;letter-spacing:.3px}.logo small{color:var(--mut);font-weight:400;margin-left:8px;font-size:12px}
+.conn{font-size:12px;color:var(--mut)}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--unk);margin-right:5px}
+.dot.ok{background:var(--low)}.dot.bad{background:var(--high)}
+nav{display:flex;gap:4px;padding:8px 16px;border-bottom:1px solid var(--bd);overflow-x:auto}
+nav button{background:none;border:0;color:var(--mut);padding:8px 12px;border-radius:8px;cursor:pointer;font:inherit;white-space:nowrap}
+nav button.on{background:var(--card);color:var(--fg);border:1px solid var(--bd)}
+main{max-width:900px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:16px;margin:0 0 14px}
+h2{font-size:16px;margin:0 0 10px}h3{font-size:14px;margin:14px 0 6px;color:var(--mut);font-weight:600}
+label{display:block;font-size:12px;color:var(--mut);margin:8px 0 3px}
+input[type=text],input[type=password]{width:100%;padding:8px 10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--fg);font:inherit}
+input[type=file]{color:var(--mut);max-width:100%}
+button.act{padding:9px 16px;border:0;border-radius:8px;background:var(--acc);color:#fff;cursor:pointer;font:inherit;margin-top:10px}
+button.act.stop{background:var(--high)}button.ghost{background:none;border:1px solid var(--bd);color:var(--mut);border-radius:6px;padding:3px 9px;cursor:pointer;font:inherit;font-size:12px}
+.row{display:flex;gap:12px;flex-wrap:wrap}.row>*{flex:1;min-width:200px}
+.badge{display:inline-block;padding:3px 12px;border-radius:99px;color:#fff;font-weight:600;font-size:13px}
+.badge.HIGH{background:var(--high)}.badge.MEDIUM{background:var(--med)}.badge.LOW{background:var(--low)}.badge.UNKNOWN{background:var(--unk)}
+.big{font-size:34px;font-weight:700;line-height:1.1}.big small{font-size:14px;color:var(--mut);font-weight:400}
+.meter{height:10px;background:var(--bd);border-radius:6px;overflow:hidden;margin:8px 0}.meter>i{display:block;height:100%;width:0;transition:width .3s}
+.eb{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:13px}.eb span:first-child{width:150px;color:var(--mut)}
+.eb .t{flex:1;height:8px;background:var(--bd);border-radius:5px;overflow:hidden}.eb .t i{display:block;height:100%}.eb span:last-child{width:40px;text-align:right}
+.tl{display:flex;gap:3px;align-items:flex-end;height:90px;overflow-x:auto;padding-bottom:2px}
+.tl div.w{display:flex;flex-direction:column-reverse;width:22px;min-width:22px;height:80px;border-radius:4px;overflow:hidden;background:var(--bd)}
+.tl div.w i{display:block;width:100%}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--mut);margin-top:8px}.legend b{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:middle}
+.note{font-size:12px;color:var(--mut);border-left:3px solid var(--acc);padding:4px 10px;margin:10px 0}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--bd)}th{color:var(--mut);font-weight:500;font-size:12px}
+.hide{display:none}ul.p{padding-left:18px;margin:6px 0}ul.p li{margin:4px 0}.mut{color:var(--mut)}
+</style></head><body>
+<header>
+ <div class="logo">CallSense<small>speech-emotion signals for call triage</small></div>
+ <div class="row" style="flex:0 1 380px;gap:8px;align-items:center">
+  <input id="key" type="password" placeholder="API key (if set)" style="min-width:140px">
+  <span class="conn"><span class="dot" id="dot"></span><span id="conn">checking...</span></span>
+ </div>
+</header>
+<nav id="nav">
+ <button data-t="live" class="on">Live Monitor</button><button data-t="queue">Call Queue</button>
+ <button data-t="rec">Recorded Call</button><button data-t="resp">Responsible AI</button>
+</nav>
+<main>
+
+<section id="t-live">
+ <div class="card"><h2>Live call monitor</h2>
+  <label>Call label (optional, kept in memory only)</label><input id="liveLabel" type="text" placeholder="e.g. Case 14 / victim line">
+  <button class="act" id="micBtn">Start listening</button> <span class="mut" id="micState"></span>
+  <div class="note">Indicative vocal signal, not evidence of a person's intent, honesty or guilt. Audio is analysed in memory and never stored.</div>
+  <div class="row" style="margin-top:6px">
+   <div><h3>Priority</h3><div id="liveBadge"><span class="badge UNKNOWN">WAITING</span></div>
+    <div class="big" id="liveUrg">-<small> / 100 urgency signal</small></div>
+    <div class="meter"><i id="liveMeter"></i></div><div class="mut" id="liveWhy" style="font-size:13px"></div></div>
+   <div><h3>Right now (last window)</h3><div id="liveBars" class="mut">Speak for 3+ seconds.</div></div>
+  </div>
+  <h3>Timeline (6-second windows)</h3><div class="tl" id="liveTl"></div><div class="legend" id="legend1"></div>
+ </div>
+</section>
+
+<section id="t-queue" class="hide">
+ <div class="card"><h2>Call queue</h2>
+  <div class="mut" style="font-size:13px;margin-bottom:8px">Highest priority first. Refreshes every 3 seconds. Calls are kept in memory for 30 minutes.</div>
+  <table><thead><tr><th>Call</th><th>Priority</th><th>Urgency</th><th>Dominant signal</th><th>Windows</th><th>Updated</th><th></th></tr></thead>
+  <tbody id="qBody"><tr><td colspan="7" class="mut">No calls yet. Analyse a recording or start the live monitor.</td></tr></tbody></table>
+ </div>
+</section>
+
+<section id="t-rec" class="hide">
+ <div class="card"><h2>Analyse a recorded call</h2>
+  <label>Audio or video file (up to 25 MB, first 60 seconds are analysed)</label><input id="file" type="file" accept="audio/*,video/*">
+  <label>Call label (optional)</label><input id="recLabel" type="text" placeholder="e.g. Case 22 / informant">
+  <label><input id="vc" type="checkbox" checked> Also check for a synthetic / cloned voice (VoiceGuard)</label>
+  <button class="act" id="recBtn">Analyse</button>
+  <div id="recOut"></div>
+ </div>
+</section>
+
+<section id="t-resp" class="hide">
+ <div class="card"><h2>Responsible use</h2>
+  <ul class="p">
+   <li><b>Indicative only.</b> Scores describe vocal patterns. They are not evidence of intent, honesty or guilt and must not be the basis for any decision about a person.</li>
+   <li><b>Human in the loop.</b> The priority level helps an officer decide which call to handle first. The officer decides.</li>
+   <li><b>Privacy.</b> Audio is analysed in memory and not stored. Logs hold only hashed call ids, scores and timings: no audio, transcripts or embeddings. Calls can be forgotten from the queue at any time.</li>
+   <li><b>Smoothing.</b> A single window can never make a call HIGH. HIGH needs 2 of the last 3 windows to be HIGH.</li>
+  </ul>
+  <h3>Known limits</h3>
+  <ul class="p">
+   <li>The model is trained on acted emotional speech (English, studio-style recordings). Real, distressed phone calls differ: accuracy on them is unknown and probably lower.</li>
+   <li>Five classes only: anger, fear, sad, neutral, happy. "Nervousness" has no label of its own and is approximated by the fear class.</li>
+   <li>The urgency signal is the probability mass on anger + fear + distress. The LOW / MEDIUM / HIGH cut-offs (40 / 70) are heuristic and not calibrated on real calls.</li>
+   <li>Telephone codecs, background noise and speaking style can change the output. Hindi and Gujarati emotion data was not used for training.</li>
+   <li>The synthetic-voice check comes from a separate service (VoiceGuard) and has its own limits: a GREEN result does not prove a caller is genuine.</li>
+  </ul>
+ </div>
+</section>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const EM=['ANG','FEA','SAD','NEU','HAP'];
+const NAME={ANG:'Anger',FEA:'Fear / nervousness',SAD:'Distress (sad)',NEU:'Calm / neutral',HAP:'Happy'};
+const COL={ANG:'var(--ANG)',FEA:'var(--FEA)',SAD:'var(--SAD)',NEU:'var(--NEU)',HAP:'var(--HAP)'};
+const LV={HIGH:'var(--high)',MEDIUM:'var(--med)',LOW:'var(--low)',UNKNOWN:'var(--unk)'};
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+try{$('key').value=localStorage.getItem('cs_key')||''}catch(e){}
+$('key').addEventListener('change',()=>{try{localStorage.setItem('cs_key',$('key').value.trim())}catch(e){}});
+const key=()=>$('key').value.trim(), H=()=>key()?{'X-API-Key':key()}:{};
+const legend=EM.map(c=>`<span><b style="background:${COL[c]}"></b>${NAME[c]}</span>`).join('');
+$('legend1').innerHTML=legend;
+
+document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#nav button').forEach(x=>x.classList.toggle('on',x===b));
+  ['live','queue','rec','resp'].forEach(t=>$('t-'+t).classList.toggle('hide',t!==b.dataset.t));
+  if(b.dataset.t==='queue')loadQueue();
+});
+
+function badge(l){return `<span class="badge ${l}">${l==='UNKNOWN'?'WAITING':l}</span>`}
+function bars(p){return EM.map(c=>{const v=Math.round((p[c]||0)*100);return `<div class="eb"><span>${NAME[c]}</span><span class="t"><i style="width:${v}%;background:${COL[c]}"></i></span><span>${v}%</span></div>`}).join('')}
+function timeline(ws){return ws.map((w,i)=>`<div class="w" title="${(w.start_s!=null?w.start_s+'s: ':'#'+(i+1)+': ')+esc(w.top_label||'')+' | urgency '+w.urgency}">${EM.map(c=>`<i style="height:${Math.round((w.probs[c]||0)*100)}%;background:${COL[c]}"></i>`).join('')}</div>`).join('')}
+function meter(el,u,level){el.style.width=Math.max(0,Math.min(100,u||0))+'%';el.style.background=LV[level||'UNKNOWN']}
+
+async function health(){
+  try{const r=await fetch('/health');const j=await r.json();$('dot').className='dot ok';
+    $('conn').textContent='connected'+(j.voiceguard_linked?' | VoiceGuard linked':' | VoiceGuard not linked')}
+  catch(e){$('dot').className='dot bad';$('conn').textContent='server not reachable'}
+}
+health();setInterval(health,15000);
+
+/* ---------- live ---------- */
+let ws,ctx,proc,stream,on=false,liveWins=[];
+function down(buf,rate){const r=rate/16000,n=Math.floor(buf.length/r),o=new Int16Array(n);
+  for(let i=0;i<n;i++){const a=Math.floor(i*r),b=Math.max(a+1,Math.min(buf.length,Math.floor((i+1)*r)));let s=0;for(let j=a;j<b;j++)s+=buf[j];s/=(b-a);o[i]=Math.max(-1,Math.min(1,s))*32767}
+  return o.buffer}
+function renderLive(j){
+  const s=j.session;
+  $('liveBadge').innerHTML=badge(s.level);$('liveUrg').innerHTML=`${s.urgency??'-'}<small> / 100 urgency signal</small>`;
+  meter($('liveMeter'),s.urgency,s.level);$('liveWhy').textContent=(s.reasons||[]).join(' ')+` (${s.windows} windows)`;
+  $('liveBars').innerHTML=bars(j.probs);
+  liveWins.push(j);$('liveTl').innerHTML=timeline(liveWins.slice(-40));
+}
+$('micBtn').onclick=async()=>{
+  if(on){stopMic();return}
+  try{stream=await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:false,noiseSuppression:false}})}
+  catch(e){$('micState').textContent='microphone blocked: '+e.message;return}
+  liveWins=[];$('liveTl').innerHTML='';
+  const cid='live-'+Math.random().toString(36).slice(2,8);
+  ctx=new (window.AudioContext||window.webkitAudioContext)();
+  const src=ctx.createMediaStreamSource(stream);proc=ctx.createScriptProcessor(4096,1,1);
+  ws=new WebSocket(`${location.protocol==='https:'?'wss':'ws'}://${location.host}/v1/stream/${cid}?api_key=${encodeURIComponent(key())}&label=${encodeURIComponent($('liveLabel').value)}`);
+  ws.onopen=()=>{src.connect(proc);proc.connect(ctx.destination);$('micState').textContent='listening... speak for 3+ seconds'};
+  ws.onmessage=e=>{const j=JSON.parse(e.data);if(j.type==='score')renderLive(j)};
+  ws.onclose=()=>{$('micState').textContent='stopped'};
+  proc.onaudioprocess=ev=>{if(ws.readyState===1)ws.send(down(ev.inputBuffer.getChannelData(0),ctx.sampleRate))};
+  on=true;$('micBtn').textContent='Stop';$('micBtn').classList.add('stop');
+};
+function stopMic(){on=false;try{ws.send(JSON.stringify({type:'end'}))}catch(e){}
+  try{proc.disconnect();stream.getTracks().forEach(t=>t.stop());ctx.close()}catch(e){}
+  $('micBtn').textContent='Start listening';$('micBtn').classList.remove('stop')}
+
+/* ---------- recorded ---------- */
+$('recBtn').onclick=async()=>{
+  const f=$('file').files[0];if(!f){$('recOut').innerHTML='<div class="note">Choose a file first.</div>';return}
+  const fd=new FormData();fd.append('file',f);fd.append('label',$('recLabel').value);fd.append('voice_check',$('vc').checked);
+  $('recOut').innerHTML='<div class="mut">Analysing...</div>';$('recBtn').disabled=true;
+  try{
+    const r=await fetch('/v1/analyze',{method:'POST',headers:H(),body:fd});const j=await r.json();
+    if(!r.ok){$('recOut').innerHTML=`<div class="note">${esc(j.detail||'error')}</div>`;return}
+    const s=j.session,v=j.voice;
+    let vhtml=v.available?`<div class="note">Synthetic-voice check (VoiceGuard): <b>${esc(v.zone)}</b>, risk ${esc(v.risk)}/100. ${esc(v.note)}</div>`
+      :`<div class="note">Synthetic-voice check: not available (${esc(v.reason)}).</div>`;
+    $('recOut').innerHTML=`<div class="row" style="margin-top:10px"><div><h3>Priority</h3>${badge(s.level)}
+      <div class="big">${s.urgency}<small> / 100 urgency signal</small></div><div class="meter"><i style="width:${s.urgency}%;background:${LV[s.level]}"></i></div>
+      <div class="mut" style="font-size:13px">${esc((s.reasons||[]).join(' '))}</div>
+      <div class="mut" style="font-size:13px;margin-top:6px">Dominant signal: <b>${esc(s.top_label)}</b> | peak urgency ${s.peak_urgency} | ${j.duration_s}s analysed in ${j.latency_ms} ms</div></div>
+      <div><h3>Average over last windows</h3>${bars(avg(j.windows))}</div></div>
+      <h3>Timeline (6-second windows, hop 3 s)</h3><div class="tl">${timeline(j.windows)}</div><div class="legend">${legend}</div>
+      ${vhtml}<div class="note">${esc(j.disclaimer)}</div>`;
+  }catch(e){$('recOut').innerHTML=`<div class="note">Request failed: ${esc(e.message)}</div>`}
+  finally{$('recBtn').disabled=false}
+};
+function avg(ws){const o={};EM.forEach(c=>o[c]=ws.reduce((a,w)=>a+(w.probs[c]||0),0)/Math.max(ws.length,1));return o}
+
+/* ---------- queue ---------- */
+async function loadQueue(){
+  try{const r=await fetch('/v1/queue',{headers:H()});const j=await r.json();
+    $('qBody').innerHTML=j.calls.length?j.calls.map(c=>`<tr><td>${esc(c.label)}</td><td>${badge(c.level)}</td><td>${c.urgency??'-'}</td><td>${esc(c.top_label||'-')}</td><td>${c.windows}</td><td>${c.age_s}s ago</td><td><button class="ghost" data-id="${esc(c.call_id)}">Forget</button></td></tr>`).join('')
+      :'<tr><td colspan="7" class="mut">No calls yet. Analyse a recording or start the live monitor.</td></tr>';
+    document.querySelectorAll('#qBody button').forEach(b=>b.onclick=async()=>{await fetch('/v1/call/'+encodeURIComponent(b.dataset.id),{method:'DELETE',headers:H()});loadQueue()});
+  }catch(e){}
+}
+setInterval(()=>{if(!$('t-queue').classList.contains('hide'))loadQueue()},3000);
+</script></body></html>
