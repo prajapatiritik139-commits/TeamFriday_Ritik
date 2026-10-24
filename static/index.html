@@ -123,6 +123,7 @@ document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{
 });
 
 function badge(l){return `<span class="badge ${l}">${l==='UNKNOWN'?'WAITING':l}</span>`}
+function prov(n){return n<2?' <span class="mut" style="font-size:12px">provisional: only '+n+' window, needs 2+ to confirm</span>':''}
 function bars(p){return EM.map(c=>{const v=Math.round((p[c]||0)*100);return `<div class="eb"><span>${NAME[c]}</span><span class="t"><i style="width:${v}%;background:${COL[c]}"></i></span><span>${v}%</span></div>`}).join('')}
 function timeline(ws){return ws.map((w,i)=>`<div class="w" title="${(w.start_s!=null?w.start_s+'s: ':'#'+(i+1)+': ')+esc(w.top_label||'')+' | urgency '+w.urgency}">${EM.map(c=>`<i style="height:${Math.round((w.probs[c]||0)*100)}%;background:${COL[c]}"></i>`).join('')}</div>`).join('')}
 function meter(el,u,level){el.style.width=Math.max(0,Math.min(100,u||0))+'%';el.style.background=LV[level||'UNKNOWN']}
@@ -141,7 +142,7 @@ function down(buf,rate){const r=rate/16000,n=Math.floor(buf.length/r),o=new Int1
   return o.buffer}
 function renderLive(j){
   const s=j.session;
-  $('liveBadge').innerHTML=badge(s.level);$('liveUrg').innerHTML=`${s.urgency??'-'}<small> / 100 urgency signal</small>`;
+  $('liveBadge').innerHTML=badge(s.level)+prov(s.windows);$('liveUrg').innerHTML=`${s.urgency??'-'}<small> / 100 urgency signal</small>`;
   meter($('liveMeter'),s.urgency,s.level);$('liveWhy').textContent=(s.reasons||[]).join(' ')+` (${s.windows} windows)`;
   $('liveBars').innerHTML=bars(j.probs);
   liveWins.push(j);$('liveTl').innerHTML=timeline(liveWins.slice(-40));
@@ -176,7 +177,7 @@ $('recBtn').onclick=async()=>{
     const s=j.session,v=j.voice;
     let vhtml=v.available?`<div class="note">Synthetic-voice check (VoiceGuard): <b>${esc(v.zone)}</b>, risk ${esc(v.risk)}/100. ${esc(v.note)}</div>`
       :`<div class="note">Synthetic-voice check: not available (${esc(v.reason)}).</div>`;
-    $('recOut').innerHTML=`<div class="row" style="margin-top:10px"><div><h3>Priority</h3>${badge(s.level)}
+    $('recOut').innerHTML=`<div class="row" style="margin-top:10px"><div><h3>Priority</h3>${badge(s.level)}${prov(s.windows)}
       <div class="big">${s.urgency}<small> / 100 urgency signal</small></div><div class="meter"><i style="width:${s.urgency}%;background:${LV[s.level]}"></i></div>
       <div class="mut" style="font-size:13px">${esc((s.reasons||[]).join(' '))}</div>
       <div class="mut" style="font-size:13px;margin-top:6px">Dominant signal: <b>${esc(s.top_label)}</b> | peak urgency ${s.peak_urgency} | ${j.duration_s}s analysed in ${j.latency_ms} ms</div></div>

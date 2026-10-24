@@ -17,11 +17,20 @@ from sklearn.preprocessing import StandardScaler
 OUT = os.environ.get("OUT", "/kaggle/working/callsense")
 CLASSES = ["ANG", "FEA", "SAD", "NEU", "HAP"]
 
-items = json.load(open(OUT + "/items.json"))
-X = np.concatenate([np.load(p) for p in sorted(glob.glob(OUT + "/parts/*.npy"))])
-total = len(items)
-items = items[: len(X)]
-print("embedded", len(X), "of", total, "(wait for all parts if fewer)")
+items_all = json.load(open(OUT + "/items.json"))
+CH = 500
+chunks, items = [], []
+for p in sorted(glob.glob(OUT + "/parts/*.npy")):       # parts may be incomplete / non-contiguous
+    try:
+        arr = np.load(p)
+    except Exception:
+        continue                                         # a part still being written
+    i = int(os.path.basename(p)[:4])
+    chunks.append(arr)
+    items += items_all[i * CH: i * CH + len(arr)]
+X = np.concatenate(chunks)
+n_parts = -(-len(items_all) // CH)
+print("parts used", len(chunks), "of", n_parts, "| clips", len(X), "of", len(items_all))
 
 keep, seen = [], set()                 # drop failed rows and duplicate RAVDESS files
 for k, it in enumerate(items):
