@@ -1,24 +1,42 @@
-# CallSense - Team Friday
+# VoxSentra - Team Friday
 
-Real-time speech-emotion signals to help cybercrime officers **prioritise calls**.
-Built for the VecnaVerse hackathon (Cybersecurity: *Real-Time Speech Emotion Analysis for Cybercrime Investigation*).
+**VoxSentra** is a voice-forensics console for cybercrime investigation with two modules:
+
+| Module | What it does | Status |
+|---|---|---|
+| **Call Triage** (this repository, code name *CallSense*) | Real-time speech-emotion signals that help officers **prioritise calls** | Built for this hackathon |
+| **Voice Verification** (optional extra) | Flags synthetic or cloned voices using our earlier **VoiceGuard** engine, called through its REST API | Existing engine, integrated |
+
+Hackathon: VecnaVerse, Cybersecurity: *Real-Time Speech Emotion Analysis for Cybercrime Investigation*.
 
 > Emotion output is an **indicative signal**, never evidence of a person's intent, honesty or guilt.
 
-## What it does
+## What Call Triage does
 - Analyses **live** (microphone / WebSocket stream) or **recorded** call audio in 6-second windows.
 - Reports probabilities for 5 vocal-emotion classes: anger, fear (approximates nervousness), distress (sad), neutral, happy.
 - Computes an **urgency signal** (0-100 = probability mass on anger + fear + distress) and a **priority level** (LOW / MEDIUM / HIGH).
 - **Smoothing:** HIGH needs 2 of the last 3 windows to be HIGH, so one noisy window cannot escalate a call.
 - **Call queue** sorted by priority; calls can be forgotten at any time.
-- Optional **synthetic-voice flag** from the separate VoiceGuard API (`VOICEGUARD_URL`), so officers also see whether the voice may be AI-generated.
+- Optional **Voice Verification** result (synthetic-voice risk zone and score) from the VoiceGuard API (`VOICEGUARD_URL`).
+
+## Results (held-out actors)
+Accuracy **0.807** on 855 test clips from actors never used for training (5 classes, chance = 0.20).
+CREMA-D 0.789, RAVDESS 0.859. Full tables, confusion matrix and limits: [RESULTS.md](RESULTS.md).
+
+## Main limits
+- Training data is **acted English speech**, not real distressed calls. Accuracy on real calls is unknown and probably lower.
+- Test actors share the recording style of the training actors, so the numbers are optimistic for real calls.
+- "Nervousness" has no label of its own; it is approximated by the fear class.
+- The LOW / MEDIUM / HIGH cut-offs (40 / 70) are heuristic and not calibrated on real calls.
+- Laptop microphones add noise and can read calm speech as anger; phone microphones and uploaded clips are more reliable.
+- Hindi and Gujarati speech were not evaluated.
 
 ## Privacy
 Audio is decoded and analysed in memory only. The audit log holds hashed call ids, scores and timings: no audio, transcripts or embeddings.
 
 ## Method
 XLS-R 300M (frozen) hidden states from layers 8, 16 and the last layer, mean + std per layer (6144 dims),
-then a StandardScaler + multinomial logistic regression head. The head is exported as plain numpy, so serving needs no scikit-learn.
+then a StandardScaler + multinomial logistic regression head. The head is exported as plain numpy (`model/emotion_head.npz`), so serving needs no scikit-learn.
 
 ## Train (Kaggle, 2 x T4)
 ```
@@ -28,10 +46,10 @@ python training/train_head.py                  # writes emotion_head.npz and res
 ```
 Datasets: CREMA-D, RAVDESS (speech), TESS (public Kaggle datasets; acted emotional speech). Test = held-out actors.
 
-## Pre-existing component
-The optional synthetic-voice flag calls **VoiceGuard**, a separate voice-clone detection API built earlier by the same team
-for another problem statement. It is used only through its REST API (`app/voiceguard.py`); its code is not part of this repository.
-Everything else here (emotion model, training scripts, API, dashboard) was built during this hackathon.
+## Existing component (Voice Verification)
+The Voice Verification module is **VoiceGuard**, a voice-clone detection API built earlier by the same team.
+It is used only through its REST API (`app/voiceguard.py`); its code is not part of this repository.
+Everything else here (emotion model, training scripts, Call Triage API and dashboard) was built during this hackathon.
 
 ## Run
 ```
@@ -42,16 +60,14 @@ MODEL_NPZ=model/emotion_head.npz API_KEY=choose-a-key DEVICE=cuda \
 Open `/` for the dashboard, `/docs` for the API. Optional: `VOICEGUARD_URL`, `VOICEGUARD_KEY`.
 Logic tests: `python tests/test_logic.py`.
 
+The live demo runs on a free GPU session, so its link is temporary. The demo video and this repository are permanent.
+
 ## API
 | Method | Path | Purpose |
 |---|---|---|
 | GET | `/health` | status, classes |
-| POST | `/v1/analyze` | audio file -> per-window emotions, urgency, priority, optional voice flag |
+| POST | `/v1/analyze` | audio file -> per-window emotions, urgency, priority, optional voice check |
 | WS | `/v1/stream/{call_id}?api_key=&label=` | PCM16 16 kHz mono in, rolling scores out |
 | GET | `/v1/queue` | active calls by priority |
 | GET / DELETE | `/v1/call/{id}` | rolling state / forget |
 | GET | `/v1/admin/stats` | counters, latency, privacy flags |
-
-## Results and limits
-Held-out-actor results are written by `training/train_head.py` to `results.json` and listed in `RESULTS.md` once training has finished. Main limits: training data is acted English speech, not real distressed calls;
-"nervousness" has no label of its own; the LOW/MEDIUM/HIGH cut-offs are heuristic and not calibrated on real calls.
