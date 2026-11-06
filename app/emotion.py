@@ -22,6 +22,7 @@ LABELS = {"ANG": "Anger", "FEA": "Fear / nervousness", "SAD": "Distress (sad)",
 NEGATIVE = ("ANG", "FEA", "SAD")
 
 HIGH_AT, MEDIUM_AT = 70.0, 40.0     # heuristic, NOT calibrated on real calls
+LOW_CONF = 0.50                     # top-class probability below this = "uncertain" (heuristic)
 
 
 def softmax(z):
@@ -93,4 +94,5 @@ class EmotionModel:
         u = urgency_from_probs(p)
         top = max(p, key=p.get)
         return {"probs": {c: round(v, 3) for c, v in p.items()}, "top": top, "top_label": LABELS.get(top, top),
-                "urgency": round(u, 1), "level": level_of(u), "latency_ms": int((time.time() - t0) * 1000)}
+                "urgency": round(u, 1), "level": level_of(u), "confidence": round(p[top], 3),
+                "uncertain": p[top] < LOW_CONF, "latency_ms": int((time.time() - t0) * 1000)}

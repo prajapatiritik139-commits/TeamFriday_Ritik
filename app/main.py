@@ -22,11 +22,11 @@ from fastapi import (Depends, FastAPI, File, Form, Header, HTTPException, Upload
                      WebSocket, WebSocketDisconnect)
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, PlainTextResponse
 
 from . import voiceguard
 from .audio import SR, decode_bytes
-from .emotion import CLASSES, EmotionModel, LABELS, level_of, urgency_from_probs
+from .emotion import CLASSES, EmotionModel, LABELS, LOW_CONF, level_of, urgency_from_probs
 from .policy import CallStore
 from .privacy import AuditLog, hid
 
@@ -178,6 +178,29 @@ def call_state(call_id: str):
         raise HTTPException(404, "unknown or expired call")
     return {**sess.state(), "label": sess.label,
             "history": [{"urgency": w["urgency"], "level": w["level"]} for w in sess.windows]}
+
+
+@app.get("/v1/call/{call_id}/report", dependencies=[Depends(auth)])
+def call_report(call_id: str, format: str = "json"):
+    """Investigator report: per-window scores only (no audio, no transcript). format=json|csv."""
+    sess = store.peek(call_id)
+    if not sess:
+        raise HTTPException(404, "unknown or expired call")
+    rows = []
+    for i, w in enumerate(sess.windows, 1):
+        top = max(w["probs"], key=w["probs"].get)
+        rows.append({"window": i, "urgency": w["urgency"], "level": w["level"], "top": top,
+                     "confidence": round(w.get("conf", 0.0), 3), "uncertain": w.get("conf", 1.0) < LOW_CONF})
+    st = sess.state()
+    if format == "csv":
+        lines = ["window,urgency,level,top_emotion,confidence,uncertain"]
+        lines += [f'{r["window"]},{r["urgency"]},{r["level"]},{r["top"]},{r["confidence"]},{r["uncertain"]}' for r in rows]
+        lines += ["", f"# call,{sess.label or sess.id}", f"# overall_level,{st['level']}",
+                  "# NOTE,Indicative signal only; not evidence of intent honesty or guilt. Human officer decides."]
+        return PlainTextResponse("\n".join(lines), media_type="text/csv",
+                                 headers={"Content-Disposition": f'attachment; filename="report_{sess.id}.csv"'})
+    return {"call_id": sess.id, "label": sess.label, "summary": st, "timeline": rows,
+            "disclaimer": "Indicative signal only; not evidence of intent, honesty or guilt. Audio is never stored."}
 
 
 @app.delete("/v1/call/{call_id}", dependencies=[Depends(auth)])

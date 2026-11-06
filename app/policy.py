@@ -7,7 +7,7 @@ import threading
 import time
 from collections import deque
 
-from .emotion import CLASSES, LABELS, level_of
+from .emotion import CLASSES, LABELS, LOW_CONF, level_of
 
 SESSION_TTL = 30 * 60
 RANK = {"HIGH": 2, "MEDIUM": 1, "LOW": 0, "UNKNOWN": -1}
@@ -22,7 +22,8 @@ class CallSession:
         self.windows = deque(maxlen=30)
 
     def add(self, probs, urgency, level):
-        self.windows.append({"probs": probs, "urgency": urgency, "level": level})
+        conf = max(probs.values()) if probs else 0.0
+        self.windows.append({"probs": probs, "urgency": urgency, "level": level, "conf": conf, "t": round(time.time() - self.t0, 1)})
         self.last = time.time()
 
     def state(self):
@@ -43,11 +44,14 @@ class CallSession:
         else:
             level = "LOW"
             reasons = ["no sustained distress, fear or anger signal in recent windows"]
+        uncertain = sum(x.get("conf", 1.0) < LOW_CONF for x in recent) * 2 > len(recent)
+        if uncertain:
+            reasons.append("LOW CONFIDENCE: the model is unsure about these windows, an officer should listen")
         mean = {c: sum(x["probs"].get(c, 0.0) for x in recent) / len(recent) for c in CLASSES}
         top = max(mean, key=mean.get)
         return {"level": level, "urgency": round(urg, 1), "windows": len(w), "top": top,
                 "top_label": LABELS.get(top, top), "peak_urgency": round(max(x["urgency"] for x in w), 1),
-                "reasons": reasons}
+                "uncertain": uncertain, "reasons": reasons}
 
 
 class CallStore:
