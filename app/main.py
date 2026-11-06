@@ -69,6 +69,11 @@ def _count(r):
     STATS["latency_ms_sum"] += r["latency_ms"]
 
 
+@app.get("/caller", include_in_schema=False)
+def caller():
+    return FileResponse(os.path.join(BASE, "static", "caller.html"))
+
+
 @app.get("/", include_in_schema=False)
 def home():
     return FileResponse(os.path.join(BASE, "static", "index.html"))
