@@ -41,6 +41,20 @@ Confusion matrix (rows = true, columns = predicted; order ANG, FEA, SAD, NEU, HA
 Fear and sad are often confused with each other (24 each way), and sad with neutral (24). Anger, fear and sad all feed the urgency signal.
 Grouping the same matrix into "anger / fear / sad" versus "neutral / happy" gives 763 of 855 correct (about 0.89). This is derived from the confusion matrix, not a separate evaluation.
 
+## Phone-line robustness (final round, SIMULATED line, not real calls)
+Same 855 held-out-actor test clips, same 5285 training clips. "Phone" = band-pass 300-3400 Hz, 8 kHz resample, mu-law, white noise at random 10-25 dB SNR (seed 0). Script: `training/phone_robustness.py`.
+
+| Head | Clean test | Phone-simulated test |
+|---|---|---|
+| A: trained on clean audio only (current head) | 0.807 | **0.568** |
+| B: trained on clean + phone-simulated audio | 0.785 | **0.757** |
+
+Per-class recall (ANG, FEA, SAD, NEU, HAP):
+- A on phone: 0.30, 0.64, 0.89, 0.66, 0.32 (anger and happy collapse, sad is over-predicted)
+- B on phone: 0.85, 0.72, 0.65, 0.91, 0.65
+
+Reading: a head trained only on clean audio loses about 24 points on simulated phone audio, and anger recall falls from 0.89 to 0.30. Adding phone-simulated copies to training recovers most of this (0.757 on phone) at a cost of about 2 points on clean audio (0.807 to 0.785). The B head is saved as `emotion_head_phone.npz`. These are simulated degradations of acted speech; real calls (other codecs, packet loss, real distress) are not tested.
+
 ## Informal observations (single clips, not measurements)
 - A calm phone recording was read as calm; a deliberately exaggerated angry English clip was read as anger.
 - Live microphone on a laptop showed anger for calm speech (microphone / noise domain shift). The same speech through a phone microphone followed the change from calm to angry.
@@ -51,6 +65,6 @@ Grouping the same matrix into "anger / fear / sad" versus "neutral / happy" give
 - Test actors come from the same datasets and recording style as the training actors, so these numbers are optimistic for real calls.
 - "Nervousness" has no label of its own and is approximated by the fear class.
 - The urgency cut-offs (40 / 70) are heuristic and not calibrated on real calls.
-- Telephone codecs, noise, laptop microphones and Hindi / Gujarati speech were not evaluated for emotion.
+- Real telephone calls, other codecs, laptop microphones and Hindi / Gujarati speech were not evaluated for emotion (a simulated phone line is reported above).
 
 Reproduce: `training/embed_features.py` then `training/train_head.py` (see README).

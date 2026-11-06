@@ -19,6 +19,15 @@ Hackathon: VecnaVerse, Cybersecurity: *Real-Time Speech Emotion Analysis for Cyb
 - **Call queue** sorted by priority; calls can be forgotten at any time.
 - Optional **Voice Verification** result (synthetic-voice risk zone and score) from the VoiceGuard API (`VOICEGUARD_URL`).
 
+## Changelog: before vs during the final round
+**Before the final round (round 1):** Call Triage (XLS-R 300M + logistic head, 0.807 on unseen actors), live and file analysis, priority queue with 2-of-3 smoothing, privacy design, dashboard. Voice Verification is an earlier project (VoiceGuard) linked in as an extra.
+
+**During the final round (6 Nov):**
+- Re-generated features and reproduced the 0.807 result from scratch.
+- Phone-line robustness test (SIMULATED line: 300-3400 Hz, 8 kHz, mu-law, noise): the clean-trained head fell from 0.807 to 0.568 on phone-like audio; retraining with phone-degraded copies gives 0.757 on phone-like and 0.785 on clean audio. See RESULTS.md and `training/phone_robustness.py`. Phone-trained head: `model/emotion_head_phone.npz`.
+- Low-confidence flag: windows whose top-class probability is below 0.50 are marked uncertain, and the call shows "LOW CONFIDENCE: an officer should listen".
+- Investigator report: `GET /v1/call/{id}/report?format=json|csv` (scores only, no audio).
+
 ## Results (held-out actors)
 Accuracy **0.807** on 855 test clips from actors never used for training (5 classes, chance = 0.20).
 CREMA-D 0.789, RAVDESS 0.859. Full tables, confusion matrix and limits: [RESULTS.md](RESULTS.md).
