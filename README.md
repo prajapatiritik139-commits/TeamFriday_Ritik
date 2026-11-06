@@ -25,6 +25,8 @@ Hackathon: VecnaVerse, Cybersecurity: *Real-Time Speech Emotion Analysis for Cyb
 **During the final round (6 Nov):**
 - Re-generated features and reproduced the 0.807 result from scratch.
 - Phone-line robustness test (SIMULATED line: 300-3400 Hz, 8 kHz, mu-law, noise): the clean-trained head fell from 0.807 to 0.568 on phone-like audio; retraining with phone-degraded copies gives 0.757 on phone-like and 0.785 on clean audio. See RESULTS.md and `training/phone_robustness.py`. Phone-trained head: `model/emotion_head_phone.npz`.
+- Cross-corpus test (train on two datasets, test on the third): accuracy 0.38 to 0.56, so 0.807 is optimistic. Calibration and cut-off tables in RESULTS.md (`training/cross_corpus_calibration.py`).
+- Offline experiment: per-corpus feature normalisation lifts mean cross-corpus accuracy from 0.48 to about 0.65 (needs unlabeled audio from the target line; not in the live demo). See RESULTS.md.
 - Low-confidence flag: windows whose top-class probability is below 0.50 are marked uncertain, and the call shows "LOW CONFIDENCE: an officer should listen".
 - Investigator report: `GET /v1/call/{id}/report?format=json|csv` (scores only, no audio).
 
@@ -36,7 +38,7 @@ CREMA-D 0.789, RAVDESS 0.859. Full tables, confusion matrix and limits: [RESULTS
 - Training data is **acted English speech**, not real distressed calls. Accuracy on real calls is unknown and probably lower.
 - Test actors share the recording style of the training actors, so the numbers are optimistic for real calls.
 - "Nervousness" has no label of its own; it is approximated by the fear class.
-- The LOW / MEDIUM / HIGH cut-offs (40 / 70) are heuristic and not calibrated on real calls.
+- The LOW / MEDIUM / HIGH cut-offs (40 / 70) are heuristic; on same-style test data they change precision only slightly (RESULTS.md) and they are not calibrated on real calls.
 - Laptop microphones add noise and can read calm speech as anger; phone microphones and uploaded clips are more reliable.
 - Hindi and Gujarati speech were not evaluated.
 
