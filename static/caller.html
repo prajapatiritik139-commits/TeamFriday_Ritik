@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VoxSentra - Caller (simulated call intake)</title>
+<style>
+:root{--bg:#0b0f17;--card:#141c2b;--fg:#eaf0fa;--mut:#8d9bb2;--bd:#222d42;--acc:#6c8cff;--red:#ff5c6c}
+@media (prefers-color-scheme:light){:root{--bg:#f2f5fb;--card:#fff;--fg:#101828;--mut:#5c6b82;--bd:#dde4f0}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+.c{width:100%;max-width:420px;background:var(--card);border:1px solid var(--bd);border-radius:20px;padding:24px;text-align:center}
+h1{font-size:20px;margin:0 0 6px}p{color:var(--mut);font-size:14px;margin:6px 0}
+input{width:100%;padding:12px;border-radius:10px;border:1px solid var(--bd);background:transparent;color:var(--fg);font-size:16px;margin:12px 0}
+button{width:100%;padding:16px;border:0;border-radius:14px;background:var(--acc);color:#fff;font-size:18px;font-weight:600}
+button.on{background:var(--red)}
+#st{margin-top:14px;font-size:14px;color:var(--mut)}
+.note{margin-top:18px;font-size:12px;color:var(--mut)}
+</style></head><body><div class="c">
+<h1>Emergency helpline - caller</h1>
+<p>Tap Call and speak. Your voice is analysed live and shows up in the officer's queue.</p>
+<input id="name" placeholder="Caller name / label (optional)" maxlength="40">
+<button id="b">Start call</button>
+<div id="st">Ready</div>
+<div class="note">Demo of call intake over the web. This is a simulation, not a real phone-network call. Audio is not stored.</div>
+</div>
+<script>
+const $=id=>document.getElementById(id);let ws,ctx,proc,stream,on=false;
+function down(buf,rate){const r=rate/16000,n=Math.floor(buf.length/r),o=new Int16Array(n);
+  for(let i=0;i<n;i++){const a=Math.floor(i*r),b=Math.max(a+1,Math.min(buf.length,Math.floor((i+1)*r)));let s=0;for(let j=a;j<b;j++)s+=buf[j];s/=(b-a);o[i]=Math.max(-1,Math.min(1,s))*32767}
+  return o.buffer}
+const key=()=>new URLSearchParams(location.search).get('key')||'';
+$('b').onclick=async()=>{
+  if(on){stop();return}
+  try{stream=await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:false,noiseSuppression:false}})}
+  catch(e){$('st').textContent='Microphone blocked: '+e.message;return}
+  const cid='call-'+Math.random().toString(36).slice(2,8);
+  const label=$('name').value||('Caller '+cid.slice(-3));
+  ctx=new (window.AudioContext||window.webkitAudioContext)();
+  const src=ctx.createMediaStreamSource(stream);proc=ctx.createScriptProcessor(4096,1,1);
+  ws=new WebSocket(`${location.protocol==='https:'?'wss':'ws'}://${location.host}/v1/stream/${cid}?api_key=${encodeURIComponent(key())}&label=${encodeURIComponent(label)}`);
+  ws.onopen=()=>{src.connect(proc);proc.connect(ctx.destination);$('st').textContent='Call connected. Speak...'};
+  ws.onclose=()=>{if(on)stop();$('st').textContent='Call ended'};
+  proc.onaudioprocess=ev=>{if(ws.readyState===1)ws.send(down(ev.inputBuffer.getChannelData(0),ctx.sampleRate))};
+  on=true;$('b').textContent='End call';$('b').classList.add('on');
+};
+function stop(){on=false;try{ws.send(JSON.stringify({type:'end'}))}catch(e){}
+  try{proc.disconnect();stream.getTracks().forEach(t=>t.stop());ctx.close()}catch(e){}
+  $('b').textContent='Start call';$('b').classList.remove('on');$('st').textContent='Call ended'}
+</script></body></html>
