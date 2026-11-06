@@ -1,0 +1,21 @@
+[
+  {
+    "file": "/demo/sample_librispeech_human.wav",
+    "title": "LibriSpeech Clean (Human Reference)",
+    "description": "Standard open-license human audiobook recording from the LibriSpeech test-clean corpus.",
+    "ground_truth": "human",
+    "source": "LibriSpeech test-clean (Reader 1089)",
+    "license": "CC BY 4.0",
+    "seen_in_training": false
+  },
+  {
+    "file": "/demo/sample_elevenlabs_synthetic.wav",
+    "title": "ElevenLabs v2 Multilingual (Synthetic)",
+    "description": "Synthesized voice cloned from open speech reference using ElevenLabs Turbo/v2 generation engine.",
+    "ground_truth": "synthetic",
+    "source": "Evaluation Benchmark - Generator Set B",
+    "generator": "ElevenLabs Multilingual v2",
+    "license": "Research evaluation sample",
+    "seen_in_training": false
+  }
+]

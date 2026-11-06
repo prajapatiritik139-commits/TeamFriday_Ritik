@@ -1,0 +1,477 @@
+@import "tailwindcss";
+@import "./design/tokens.css";
+
+@layer base {
+  html, body {
+    overflow-x: hidden;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  * {
+    border-color: var(--border);
+  }
+  
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+/* Background technical grid pattern overlay */
+.bg-grid-pattern {
+  background-size: 32px 32px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+}
+
+/* Layered Glass surface utility */
+.glass-panel {
+  background-color: var(--surface-card);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37), 0 1px 0 0 rgba(255, 255, 255, 0.05) inset;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.glass-panel-elevated {
+  background-color: var(--surface-elevated);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.45), 0 1px 0 0 rgba(255, 255, 255, 0.08) inset;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.glass-panel-hover:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+/* Navbar glowing hairline */
+.navbar-glow-line {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(34, 211, 238, 0.4) 50%, transparent 100%);
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.35);
+}
+
+/* Animated dashed border for dropzone drag-over */
+@keyframes dash-march {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
+.drag-active-border {
+  border-color: var(--accent);
+  box-shadow: 0 0 24px rgba(34, 211, 238, 0.2), inset 0 0 24px rgba(34, 211, 238, 0.05);
+}
+
+/* 3D tilt perspective container */
+.perspective-container {
+  perspective: 1200px;
+}
+
+/* Tilt card with smooth return */
+.tilt-card {
+  transform-style: preserve-3d;
+  transition: transform 0.15s cubic-bezier(0.2, 0, 0.2, 1), box-shadow 0.2s ease;
+  will-change: transform;
+}
+
+/* Magnetic button with spring ease */
+.magnetic-btn {
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.4, 1.2), box-shadow 0.2s ease;
+  will-change: transform;
+}
+
+/* Custom Circle Cursor Ring (Follows pointer) */
+.custom-cursor-wrapper {
+  will-change: transform;
+  pointer-events: none;
+}
+
+.custom-cursor-ring {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(34, 211, 238, 0.75);
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.4), inset 0 0 6px rgba(34, 211, 238, 0.15);
+  transition: width 0.15s ease, height 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Hide the following ring cursor on touch devices */
+@media (pointer: coarse), (hover: none) {
+  .custom-cursor-wrapper {
+    display: none !important;
+  }
+}
+
+/* Click / Tap Ripple Animation */
+@keyframes pointer-ripple-expand {
+  0% {
+    transform: scale(0.15);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(2.8);
+    opacity: 0;
+  }
+}
+
+.click-ripple-wrapper {
+  will-change: transform;
+  pointer-events: none;
+}
+
+.click-ripple-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(34, 211, 238, 0.85);
+  box-shadow: 0 0 14px rgba(34, 211, 238, 0.6), inset 0 0 8px rgba(34, 211, 238, 0.3);
+  animation: pointer-ripple-expand 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Echo Mascot Animations */
+@keyframes echo-bob {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.echo-floating-bob {
+  animation: echo-bob 4s ease-in-out infinite;
+}
+
+@keyframes echo-wiggle {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-4deg);
+  }
+  75% {
+    transform: rotate(4deg);
+  }
+}
+
+.echo-wiggle-headphones {
+  animation: echo-wiggle 0.35s ease-in-out 3;
+}
+
+/* 6-second gentle breathing pulse for Echo's halo and sound-wave arcs */
+@keyframes echo-soundwave-breath {
+  0%, 100% {
+    opacity: 0.45;
+    transform: scale(0.97);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scale(1.04);
+  }
+}
+
+.echo-soundwaves-breath {
+  animation: echo-soundwave-breath 6s ease-in-out infinite;
+  transform-origin: 190px 190px;
+}
+
+@keyframes echo-halo-breath {
+  0%, 100% {
+    opacity: 0.12;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 0.28;
+    transform: scale(1.08);
+  }
+}
+
+.echo-halo-breath {
+  animation: echo-halo-breath 6s ease-in-out infinite;
+  transform-origin: 190px 190px;
+}
+
+/* Tap bounce reaction */
+@keyframes echo-mascot-bounce {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  35% {
+    transform: translateY(-12px) scale(1.04);
+  }
+  65% {
+    transform: translateY(2px) scale(0.98);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+.echo-bounce-active {
+  animation: echo-mascot-bounce 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Red or High verdict: soft red shake (once, not looping) */
+@keyframes echo-red-shake {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  15% {
+    transform: translate(-6px, 0) rotate(-3deg);
+  }
+  30% {
+    transform: translate(6px, 0) rotate(3deg);
+  }
+  45% {
+    transform: translate(-4px, 0) rotate(-2deg);
+  }
+  60% {
+    transform: translate(4px, 0) rotate(2deg);
+  }
+  75% {
+    transform: translate(-2px, 0) rotate(-1deg);
+  }
+}
+
+.echo-shake-once {
+  animation: echo-red-shake 0.55s cubic-bezier(0.36, 0.07, 0.19, 0.97) 1 forwards;
+}
+
+/* Voice Verification mode: slow scanning eye movement */
+@keyframes echo-scanning-pupil {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-6px);
+  }
+  75% {
+    transform: translateX(6px);
+  }
+}
+
+.echo-scanning-eyes {
+  animation: echo-scanning-pupil 4s ease-in-out infinite;
+}
+
+/* Analyzing state: thinking animation */
+@keyframes echo-thinking-head {
+  0%, 100% {
+    transform: rotate(0deg) translateY(0);
+  }
+  50% {
+    transform: rotate(-3.5deg) translateY(-3px);
+  }
+}
+
+.echo-thinking {
+  animation: echo-thinking-head 2.4s ease-in-out infinite;
+}
+
+/* Speech bubble subtle pop-in */
+@keyframes speech-bubble-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.echo-bubble-pop {
+  animation: speech-bubble-pop 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Staggered speech bubble buttons pop-out */
+@keyframes echo-stagger-pop {
+  0% {
+    opacity: 0;
+    transform: translateX(-12px) scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.echo-stagger-1 {
+  animation: echo-stagger-pop 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 0ms;
+}
+.echo-stagger-2 {
+  animation: echo-stagger-pop 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 50ms;
+}
+.echo-stagger-3 {
+  animation: echo-stagger-pop 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 100ms;
+}
+.echo-stagger-4 {
+  animation: echo-stagger-pop 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 150ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .click-ripple-circle {
+    animation: none !important;
+    display: none !important;
+  }
+  .custom-cursor-ring {
+    transition: none !important;
+  }
+  .echo-floating-bob,
+  .echo-soundwaves-breath,
+  .echo-halo-breath,
+  .echo-wiggle-headphones,
+  .echo-bounce-active,
+  .echo-shake-once,
+  .echo-scanning-eyes,
+  .echo-thinking,
+  .echo-bubble-pop,
+  .echo-stagger-1,
+  .echo-stagger-2,
+  .echo-stagger-3,
+  .echo-stagger-4,
+  .triage-glass-card::before,
+  .triage-skeleton::after,
+  .triage-breathing-glow,
+  .priority-high-single-pulse {
+    animation: none !important;
+  }
+}
+
+/* Call Triage Premium Glassmorphism & Gradient Border */
+@keyframes gradient-border-pan {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.triage-glass-card {
+  position: relative;
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(13, 21, 40, 0.95) 0%, rgba(8, 13, 26, 0.96) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.triage-glass-card::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 21px;
+  padding: 1px;
+  background: linear-gradient(90deg, rgba(34, 211, 238, 0.35), rgba(244, 63, 94, 0.2), rgba(16, 185, 129, 0.25), rgba(34, 211, 238, 0.35));
+  background-size: 300% 300%;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: gradient-border-pan 12s ease infinite;
+}
+
+/* Shimmering Skeleton for Analysing State */
+@keyframes triage-skeleton-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.triage-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.triage-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+  transform: translateX(-100%);
+  animation: triage-skeleton-shimmer 1.8s infinite;
+}
+
+/* Idle State Subtle Breathing Glow */
+@keyframes triage-subtle-breathe {
+  0%, 100% {
+    opacity: 0.35;
+    transform: scale(0.985);
+  }
+  50% {
+    opacity: 0.65;
+    transform: scale(1.015);
+  }
+}
+
+.triage-breathing-glow {
+  animation: triage-subtle-breathe 4s ease-in-out infinite;
+  transform-origin: center;
+}
+
+/* High Priority Single Red Pulse Animation */
+@keyframes priority-high-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.8), 0 0 20px rgba(244, 63, 94, 0.4);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 16px rgba(244, 63, 94, 0), 0 0 40px rgba(244, 63, 94, 0.8);
+    transform: scale(1.03);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(244, 63, 94, 0), 0 0 20px rgba(244, 63, 94, 0.3);
+    transform: scale(1);
+  }
+}
+
+.priority-high-single-pulse {
+  animation: priority-high-pulse 0.9s cubic-bezier(0.16, 1, 0.3, 1) 1 forwards;
+}
+
+.echo-mascot-avatar-closed {
+  width: clamp(150px, 42vw, 260px);
+  height: clamp(150px, 42vw, 260px);
+}
+@media (min-width: 768px) {
+  .echo-mascot-avatar-closed {
+    width: 300px;
+    height: 300px;
+  }
+}
+
+.echo-mascot-avatar-open {
+  width: 100%;
+  max-width: 155px;
+  aspect-ratio: 1 / 1;
+}
+@media (min-width: 768px) {
+  .echo-mascot-avatar-open {
+    width: 280px;
+    height: 280px;
+    max-width: 280px;
+  }
+}
